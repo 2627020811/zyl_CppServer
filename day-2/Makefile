@@ -2,4 +2,4 @@ server: #这个规则告诉 make 命令如何编译 server.cpp 并生成可执�
 	g++ server.cpp -o server && g++ client.cpp -o client
 
 clean:
-	rm server && rm clean
+	rm server && rm client
