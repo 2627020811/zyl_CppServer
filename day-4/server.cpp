@@ -48,7 +48,7 @@ int main()
                 clnt_sock->setnonblocking();
                 ep->addFd(clnt_sock->getFd(), EPOLLIN | EPOLLET);
             }
-            else if (events[i].events && EPOLLIN) // 可读事件
+            else if (events[i].events & EPOLLIN) // 可读事件 EPOLLIN 是 epoll 中用于表示可读事件的标志位
             {
                 handleReadEvents(events[i].data.fd);
             }
