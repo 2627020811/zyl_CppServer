@@ -14,14 +14,14 @@
 #define MAX_EVENTS 1024
 #define READ_BUFFER 1024
 
-void setnonblocking(int fd)
-{
-    // setnonblocking(int fd) 函数用于将指定的文件描述符 fd 设置为非阻塞模式。在非阻塞模式下，读写操作不会阻塞进程，即使没有立即可以完成的数据，这使得程序可以更有效地处理异步 I/O 操作，特别适用于事件驱动的编程模型（如使用 epoll 等）。
+// void setnonblocking(int fd)
+// {
+//     // setnonblocking(int fd) 函数用于将指定的文件描述符 fd 设置为非阻塞模式。在非阻塞模式下，读写操作不会阻塞进程，即使没有立即可以完成的数据，这使得程序可以更有效地处理异步 I/O 操作，特别适用于事件驱动的编程模型（如使用 epoll 等）。
 
-    int flags = fcntl(fd, F_GETFL); // 获取当前文件描述符的状态标志
-    flags |= O_NONBLOCK;            // 添加 O_NONBLOCK 非阻塞模式标志
-    fcntl(fd, F_SETFL, flags);      // 将新的状态标志应用到文件描述符上
-}
+//     int flags = fcntl(fd, F_GETFL); // 获取当前文件描述符的状态标志
+//     flags |= O_NONBLOCK;            // 添加 O_NONBLOCK 非阻塞模式标志
+//     fcntl(fd, F_SETFL, flags);      // 将新的状态标志应用到文件描述符上
+// }
 
 void handleReadEvent(int fd);
 
@@ -35,7 +35,7 @@ int main()
     Epoll *ep = new Epoll();
     serv_sock->setnonblocking();
     Channel *servChannel = new Channel(ep, serv_sock->getFd());
-    servChannel->enableReading(); //监视可读事件
+    servChannel->enableReading(); // 监视可读事件
 
     while (true)
     {
@@ -45,7 +45,7 @@ int main()
         for (int i = 0; i < nfds; i++)
         {
             int chfd = activeChannels[i]->getFd();
-            if (chfd == serv_sock->getFd()) // 新客户端连接
+            if (chfd == serv_sock->getFd()) // 发生事件的fd是服务器的fd，表示有新客户端连接
             {
                 InetAddress *clnt_addr = new InetAddress();                   // 没有delete,会发生内存泄露
                 Socket *clnt_sock = new Socket(serv_sock->accept(clnt_addr)); // 没有delete,会发生内存泄露
@@ -54,7 +54,7 @@ int main()
                 Channel *clntChannel = new Channel(ep, clnt_sock->getFd());
                 clntChannel->enableReading();
             }
-            else if (activeChannels[i]->getEvents() & EPOLLIN)
+            else if (activeChannels[i]->getEvents() & EPOLLIN) // 发生事件的是客户端，并且是可读事件
             {
                 // 通过按位与运算符 & 来判断 events[i].events 是否包含了 EPOLLIN 标志位，以确定是否发生了可读事件。这是因为在 epoll 的事件结构 epoll_event 中，每个事件都是一个位掩码，其中包含了多个不同的事件标志位，如可读事件 EPOLLIN、可写事件 EPOLLOUT、错误事件 EPOLLERR 等。
                 handleReadEvent(activeChannels[i]->getFd());
