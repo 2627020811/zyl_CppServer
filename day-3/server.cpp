@@ -11,12 +11,13 @@
 #define MAX_EVENTS 1024
 #define READ_BUFFER 1024
 
-void setnonblocking(int fd) {
+void setnonblocking(int fd)
+{
     // setnonblocking(int fd) 函数用于将指定的文件描述符 fd 设置为非阻塞模式。在非阻塞模式下，读写操作不会阻塞进程，即使没有立即可以完成的数据，这使得程序可以更有效地处理异步 I/O 操作，特别适用于事件驱动的编程模型（如使用 epoll 等）。
 
     int flags = fcntl(fd, F_GETFL); // 获取当前文件描述符的状态标志
-    flags |= O_NONBLOCK; // 添加 O_NONBLOCK 非阻塞模式标志
-    fcntl(fd, F_SETFL, flags); // 将新的状态标志应用到文件描述符上
+    flags |= O_NONBLOCK;            // 添加 O_NONBLOCK 非阻塞模式标志
+    fcntl(fd, F_SETFL, flags);      // 将新的状态标志应用到文件描述符上
 }
 int main()
 {
@@ -48,7 +49,7 @@ int main()
     memset(&ev, 0, sizeof(ev));
 
     ev.data.fd = sockfd;
-    ev.events = EPOLLIN | EPOLLET;//关注可读事件，并使用边缘触发模式
+    ev.events = EPOLLIN | EPOLLET; // 关注可读事件，并使用边缘触发模式
 
     setnonblocking(sockfd);
 
@@ -56,9 +57,9 @@ int main()
 
     while (true)
     {
-         //epoll_wait: 等待 epoll 实例 epfd 中的事件发生，最多等待 MAX_EVENTS 个事件，阻塞直到有事件发生或超时。
+        // epoll_wait: 等待 epoll 实例 epfd 中的事件发生，最多等待 MAX_EVENTS 个事件，阻塞直到有事件发生或超时。
         int nfds = epoll_wait(epfd, events, MAX_EVENTS, -1); // 有nfds个fd发生事件,events是一个指向 struct epoll_event 数组的指针，用于存储发生事件的文件描述符及其事件类型。
-       
+
         errif(nfds == -1, "epoll wait error");
         for (int i = 0; i < nfds; i++)
         {
@@ -66,46 +67,49 @@ int main()
             {
                 struct sockaddr_in clnt_addr;
                 memset(&clnt_addr, 0, sizeof(clnt_addr));
-                socklen_t clnt_addr_len=sizeof(clnt_addr);
+                socklen_t clnt_addr_len = sizeof(clnt_addr);
 
-                int clnt_sockfd=accept(sockfd,(sockaddr*)&clnt_addr,&clnt_addr_len);
-                errif(clnt_sockfd==-1,"socket accept error");
-                printf("new client fd %d! IP: %s Port: %d\n",clnt_sockfd,inet_ntoa(clnt_addr.sin_addr),ntohs(clnt_addr.sin_port));
-                //将新的客户端套接字添加到 epoll 实例中，监听其读事件
-                memset(&ev,0,sizeof(ev));
-                ev.data.fd=clnt_sockfd;
-                ev.events=EPOLLIN|EPOLLET;
+                int clnt_sockfd = accept(sockfd, (sockaddr *)&clnt_addr, &clnt_addr_len);
+                errif(clnt_sockfd == -1, "socket accept error");
+                printf("new client fd %d! IP: %s Port: %d\n", clnt_sockfd, inet_ntoa(clnt_addr.sin_addr), ntohs(clnt_addr.sin_port));
+                // 将新的客户端套接字添加到 epoll 实例中，监听其读事件
+                memset(&ev, 0, sizeof(ev));
+                ev.data.fd = clnt_sockfd;
+                ev.events = EPOLLIN | EPOLLET; 
+                //EPOLLIN 是一个宏定义，表示在使用 epoll 进行事件监听时关注的事件类型之一，代表可读事件。当文件描述符（如套接字）上有数据可读时，就会触发可读事件。这样一来，程序就可以通过读取数据来处理客户端发送过来的信息。
 
                 // 在默认的阻塞模式下，如果使用阻塞式 I/O 函数（如 read、write、accept 等）操作 clnt_sockfd，当没有数据可读或无法立即写入数据时，这些函数会导致服务器进程阻塞，即挂起等待直到操作完成。这样会导致服务器无法处理其他任务或其他客户端的请求，降低了服务器的并发性和响应性。所以设置为非阻塞
-                setnonblocking(clnt_sockfd); //将指定文件描述符设置为非阻塞模式
-                epoll_ctl(epfd,EPOLL_CTL_ADD,clnt_sockfd,&ev);
+                setnonblocking(clnt_sockfd); // 将指定文件描述符设置为非阻塞模式
+                epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sockfd, &ev); //监听客户端的可读事件，注意用的是clnt_sockfd
             }
-            else if(events[i].events&EPOLLIN) //发生事件的是客户端，并且是可读事件
+            else if (events[i].events & EPOLLIN) // 可读事件
             {
+                // events[i].events 表示第 i 个事件的事件类型，它是一个位掩码，包含了该事件关注的所有事件类型。
+                //  EPOLLIN 是一个宏定义，表示可读事件。
                 char buf[READ_BUFFER];
-                while(true)
+                while (true)
                 {
-                    memset(buf,0,sizeof(buf));
-
-                    ssize_t bytes_read=read(events[i].data.fd,buf,sizeof(buf)); //如果上面没有设置为非阻塞，那这里服务器就会被阻塞住了
-                    if(bytes_read>0)
+                    memset(buf, 0, sizeof(buf));
+                    //在一个典型的服务器程序中，events[i].data.fd 是一个套接字描述符，代表与客户端建立的连接。所以 read 函数从该套接字描述符关联的客户端连接中读取数据。events[i].data.fd是clnt_sockfd
+                    ssize_t bytes_read = read(events[i].data.fd, buf, sizeof(buf)); // 如果上面没有设置为非阻塞，那这里服务器就会被阻塞住了
+                    if (bytes_read > 0)
                     {
-                        printf("message from client fd %d: %s\n",events[i].data.fd,buf);
-                        write(events[i].data.fd,buf,sizeof(buf));
+                        printf("message from client fd %d: %s\n", events[i].data.fd, buf);
+                        write(events[i].data.fd, buf, sizeof(buf));
                     }
-                    else if(bytes_read==-1&&errno==EINTR) //客户端正常中断，继续读取
+                    else if (bytes_read == -1 && errno == EINTR) // 客户端正常中断，继续读取
                     {
                         printf("continue reading");
                         continue;
                     }
-                    else if(bytes_read==-1&&((errno==EAGAIN)||(errno==EWOULDBLOCK))) //非阻塞IO，这个条件表示数据全部读取完毕
+                    else if (bytes_read == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) // 非阻塞IO，这个条件表示数据全部读取完毕
                     {
-                        printf("finish reading once,errno:%d\n",errno);
+                        printf("finish reading once,errno:%d\n", errno);
                         break;
                     }
-                    else if(bytes_read==0) //EOF，客户端断开连接
+                    else if (bytes_read == 0) // EOF，客户端断开连接
                     {
-                        printf("EOF,client fd %d disconnected\n",events[i].data.fd);
+                        printf("EOF,client fd %d disconnected\n", events[i].data.fd);
                         close(events[i].data.fd);
                         break;
                     }
@@ -113,7 +117,7 @@ int main()
             }
             else
             {
-                //其他事件，其它版本实现
+                // 其他事件，其它版本实现
                 printf("something else happened\n");
             }
         }

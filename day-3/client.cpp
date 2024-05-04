@@ -40,7 +40,7 @@ int main()
         }
 
         memset(buf,0,sizeof(buf));
-        ssize_t read_bytes=read(sockfd,buf,sizeof(buf)); //// 从服务器接收数据
+        ssize_t read_bytes=read(sockfd,buf,sizeof(buf)); // 从服务器接收数据
         if(read_bytes>0)
         {
             printf("message from server: %s\n",buf);
