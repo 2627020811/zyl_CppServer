@@ -4,18 +4,18 @@
 #include "Channel.h"
 #include "Server.h"
 
-Acceptor::Acceptor(EventLoop *_loop):loop(_loop)
+Acceptor::Acceptor(EventLoop *_loop) : loop(_loop)
 {
-    sock=new Socket();
-    addr=new InetAddress("127.0.0.1",8888);
+    sock = new Socket();
+    addr = new InetAddress("127.0.0.1", 8888);
     sock->bind(addr);
     sock->listen();
     sock->setnonblocking();
 
-    acceptChannel=new Channel(loop,sock->getFd());
-    std::function<void()> cb=std::bind(&Acceptor::acceptConnection,this);
+    acceptChannel = new Channel(loop, sock->getFd());
+    std::function<void()> cb = std::bind(&Acceptor::acceptConnection, this);
     acceptChannel->setCallback(cb);
-    acceptChannel->enableReading();
+    acceptChannel->enableReading(); // 添加监听事件
 }
 
 Acceptor::~Acceptor()
@@ -27,10 +27,10 @@ Acceptor::~Acceptor()
 
 void Acceptor::acceptConnection()
 {
-    newConnectionCallback(sock); //执行这个可调用对象
+    newConnectionCallback(sock); // 执行这个可调用对象
 }
 
-void Acceptor::setNewConnectionCallback(std::function<void(Socket*)> _cb)
+void Acceptor::setNewConnectionCallback(std::function<void(Socket *)> _cb)
 {
-    newConnectionCallback=_cb; //设置这个可调用对象
+    newConnectionCallback = _cb; // 设置这个可调用对象
 }

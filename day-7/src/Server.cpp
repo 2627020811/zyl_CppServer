@@ -13,6 +13,7 @@
 
 Server::Server(EventLoop *_loop) : loop(_loop), acceptor(nullptr)
 {
+    // 新的 TCP 连接应该由 Server 类来创建和管理生命周期，而 Acceptor 类则负责接受连接请求并创建新的连接套接字。这样的组织结构既符合逻辑关系，又保持了服务器的通用性。
     acceptor = new Acceptor(loop); //新建连接，把服务端这边处理好，建立新建连接的监听事件，但延迟给这个监听事件的回调函数赋值，实际赋值为下两句代码的newConnection
     // 这样一来，新建连接的逻辑就在Acceptor类中。但逻辑上新socket建立后就和之前监听的服务器socket没有任何关系了，TCP连接和Acceptor一样，拥有以上提到的三个特点，这两个类之间应该是平行关系。所以新的TCP连接应该由Server类来创建并管理生命周期，而不是Acceptor。并且将这一部分代码放在Server类里也并没有打破服务器的通用性，因为对于所有的服务，都要使用Acceptor来建立连接。
     std::function<void(Socket *)> cb = std::bind(&Server::newConnection, this, std::placeholders::_1);  //接受连接，返回客户端socket并添加到epoll监听

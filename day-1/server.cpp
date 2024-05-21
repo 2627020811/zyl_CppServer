@@ -2,7 +2,7 @@
 #include <string.h> //bzero
 #include<stdio.h>
 #include <arpa/inet.h> //这个头文件包含了<netinet/in.h>，不用再次包含了
-
+#include<iostream>
 int main()
 {
     // 参数解释：参数一：ip地址类型，IPV4使用AF_INET；参数二：数据传输方式，SOCK_STREAM表示流格式、面向连接，多用于TCP
@@ -30,6 +30,7 @@ int main()
     memset(&clnt_addr, 0, sizeof(clnt_addr));
 
     int clnt_sockfd=accept(sockfd,(sockaddr*)&clnt_addr,&clnt_addr_len);
+    // std::cout<<"server.cpp sockfd"<<sockfd<< std::endl;
     printf("new client fd %d! IP:%s Port:%d\n",clnt_sockfd,inet_ntoa(clnt_addr.sin_addr),ntohs(clnt_addr.sin_port));
     //inet_ntoa(clnt_addr.sin_addr) 用于将 clnt_addr 结构体中的客户端 IP 地址转换为点分十进制的字符串格式。
     //ntohs(clnt_addr.sin_port) 将 clnt_addr 结构体中的客户端端口号从网络字节序（大端字节序）转换为主机字节序（小端字节序），以便打印出端口号。

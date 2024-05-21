@@ -13,13 +13,13 @@ class Acceptor;
 class Server
 {
 private:
-    EventLoop *loop;
-    Acceptor *acceptor;
+    EventLoop *loop;    // 事件循环
+    Acceptor *acceptor; // 用于接受连接
 
 public:
     Server(EventLoop *);
     ~Server();
 
-    void handleReadEvent(int);
-    void newConnection(Socket *serv_sock);
+    void handleReadEvent(int);             // 处理客户端请求
+    void newConnection(Socket *serv_sock); // 新建TCP连接
 };
