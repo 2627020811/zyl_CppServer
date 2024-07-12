@@ -60,5 +60,6 @@
         "typeinfo": "cpp",
         "map": "cpp",
         "future": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/zhao/c++_projects/04-22/CppServer/day-13/src"
 }
